@@ -1,0 +1,213 @@
+import java.util.*;
+import java.io.*;
+
+/* semantic value of token returned by scanner */
+
+public class Lexer {
+	BufferedReader reader;
+	Yylex yy;
+
+	public Lexer(String filein) throws FileNotFoundException {
+		reader = new BufferedReader(new FileReader(filein));
+		yy = new Yylex (reader);
+	}
+
+	public String getNextToken(String filein) throws IOException {
+		return yy.next_token();
+	}
+
+	public static void main(String[] args) throws IOException {
+		BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/snippets/partial/test-1.py"));
+		BufferedWriter writer = new BufferedWriter(new FileWriter("src/main/resources/snippets/partial/test-1.out"));
+		Yylex yy = new Yylex(reader);
+
+		while (true) {
+			String x = yy.next_token();
+
+			if (x == null) {
+			    break;
+			}
+
+			writer.write(x);	
+			writer.write('\n');
+		}
+
+		reader.close();
+		writer.close();
+	}
+}
+
+%%
+
+%function next_token
+%type String
+
+%eofval{
+  return null;
+%eofval}
+
+KEYWORD=False|class|finally|is|return|None|continue|for|lambda|try|True|def|from|nonlocal|while|and|del|global|not|with|as|elif|if|or|yield|assert|else|import|pass|break|except|in|raise
+SYSTEM=System
+ALPHA=[A-Za-z_-_]
+ALPHA_NUMERIC={ALPHA}|{DIGIT}
+NUMBER={DIGIT}+("."{DIGIT}+)(E[+-]?{DIGIT}+)?
+WHITE_SPACE=([\ \n\r\t\f\b])+
+NOSLASHQUOTE = [^\"]
+STRING = \"{NOSLASHQUOTE}*\"
+NOSLASHSINGLE = [^\']
+CHAR = \'{NOSLASHSINGLE}*\'
+ID = {ALPHA}({ALPHA}|{DIGIT})*
+COMMENTS=\#[^\n]* \n
+MULTICOMMENT=\"\"\"{NOSLASHQUOTE}*\"\"\"
+OPERATORS="//"|"%"|"**"|"&"|"|"|"and"|"or"|"not"|"^"|"~"|"<<"|">>"
+UNDERSCORE="_"
+NEGATIVEINTEGER="-"{INTEGER}+
+INTEGER={DECINTEGER}|{BININTEGER}|{OCTINTEGER}|{HEXINTEGER}|"0"
+DECINTEGER={NONZERODIGIT}{DIGIT}*
+BININTEGER="0"("b"|"B"){BINDIGIT}+
+OCTINTEGER="0"("o"|"O"){OCTDIGIT}+
+HEXINTEGER="0"("x"|"X"){HEXDIGIT}+
+NONZERODIGIT=[1-9]
+DIGIT=[0-9]
+BINDIGIT=[0-1]
+OCTDIGIT=[0-7]
+HEXDIGIT=[0-9A-Fa-f]
+%%
+
+<YYINITIAL> {WHITE_SPACE} { }
+
+<YYINITIAL> {OPERATORS} {
+    return "OP\t"+yytext();
+}
+
+<YYINITIAL> {MULTICOMMENT} {
+    return "MC\t"+yytext();
+}
+
+<YYINITIAL> {COMMENTS} {
+    return "CT\t"+yytext();
+}
+
+<YYINITIAL> {KEYWORD} { 
+  return "KW\t"+yytext(); 
+}
+
+<YYINITIAL> {SYSTEM} { 
+  return "SY\t"+yytext(); 
+}
+
+<YYINITIAL> {ID} { 
+  return "ID\t"+yytext(); 
+}
+
+<YYINITIAL> {NUMBER} {
+  return "DL\t"+yytext();
+}
+
+<YYINITIAL> {INTEGER} {
+  return "INT\t"+yytext();
+}
+
+<YYINITIAL> {NEGATIVEINTEGER} {
+  return "NINT\t"+yytext();
+}
+
+<YYINITIAL> {STRING} { 
+  return "ST\t"+yytext(); 
+}
+
+<YYINITIAL> {CHAR} { 
+  return "CH\t"+yytext(); 
+}
+
+<YYINITIAL> "." { 
+  return "DOT\t.";
+}
+
+<YYINITIAL> "+" { 
+  return "PLUS\t+";
+}
+
+<YYINITIAL> "-" {
+  return "MINUS\t-";
+}
+
+<YYINITIAL> "*" {
+  return "MUL\t*";
+}
+
+<YYINITIAL> "/" {
+  return "DIV\t/";
+}
+
+<YYINITIAL> "=" { 
+  return "EQ\t=";
+}
+
+<YYINITIAL> "<=" {
+  return "LTEQ\t<=";
+}
+
+<YYINITIAL> ">=" {
+  return "GTEQ\t>=";
+}
+
+<YYINITIAL> "<" {
+  return "LT\t<";
+}
+
+<YYINITIAL> ">" {
+  return "GT\t>";
+}
+
+<YYINITIAL> "==" { 
+  return "ISEQ\t==";
+}
+
+<YYINITIAL> "!=" {
+  return "NOTEQ\t!=";
+}
+
+<YYINITIAL> "{" { 
+  return "LC\t{"; 
+}
+
+<YYINITIAL> "}" { 
+  return "RC\t}"; 
+}
+
+<YYINITIAL> "(" { 
+  return "LB\t("; 
+}
+
+<YYINITIAL> ")" { 
+  return "RB\t)"; 
+}
+
+<YYINITIAL> ";" { 
+  return "SM\t;"; 
+}
+
+<YYINITIAL> ":" {
+  return "COLON\t:";
+}
+
+<YYINITIAL> "," { 
+  return "COMMA\t,";
+}
+
+<YYINITIAL> "[]" { 
+  return "AA\t[]"; 
+}
+
+<YYINITIAL> "[" { 
+  return "LS\t["; 
+}
+
+<YYINITIAL> "]" { 
+  return "RS\t]"; 
+}
+
+<YYINITIAL> . { 
+  return "Undefined\t"+yytext(); 
+}
